@@ -1,0 +1,128 @@
+name: 钉钉通知（可复用）
+
+on:
+  workflow_call:
+    inputs:
+      event_name:
+        required: true
+        type: string
+      repo_name:
+        required: true
+        type: string
+      actor:
+        required: true
+        type: string
+      ref_name:
+        required: false
+        type: string
+        default: ''
+      commit_message:
+        required: false
+        type: string
+        default: ''
+      commit_url:
+        required: false
+        type: string
+        default: ''
+      pr_title:
+        required: false
+        type: string
+        default: ''
+      pr_url:
+        required: false
+        type: string
+        default: ''
+      pr_action:
+        required: false
+        type: string
+        default: ''
+      pr_merged:
+        required: false
+        type: string
+        default: 'false'
+      pr_base:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      DINGTALK_WEBHOOK_URL:
+        required: true
+      DINGTALK_SIGN_SECRET:
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 发送钉钉通知
+        env:
+          DINGTALK_WEBHOOK_URL: ${{ secrets.DINGTALK_WEBHOOK_URL }}
+          DINGTALK_SIGN_SECRET: ${{ secrets.DINGTALK_SIGN_SECRET }}
+          EVENT_NAME: ${{ inputs.event_name }}
+          REPO_NAME: ${{ inputs.repo_name }}
+          ACTOR: ${{ inputs.actor }}
+          REF_NAME: ${{ inputs.ref_name }}
+          COMMIT_MESSAGE: ${{ inputs.commit_message }}
+          COMMIT_URL: ${{ inputs.commit_url }}
+          PR_TITLE: ${{ inputs.pr_title }}
+          PR_URL: ${{ inputs.pr_url }}
+          PR_ACTION: ${{ inputs.pr_action }}
+          PR_MERGED: ${{ inputs.pr_merged }}
+          PR_BASE: ${{ inputs.pr_base }}
+        run: |
+          python3 - <<'PYEOF'
+          import os, json, time, hmac, hashlib, base64, urllib.parse, urllib.request
+
+          webhook = os.environ["DINGTALK_WEBHOOK_URL"]
+          secret  = os.environ["DINGTALK_SIGN_SECRET"]
+          event   = os.environ["EVENT_NAME"]
+          repo    = os.environ["REPO_NAME"]
+          actor   = os.environ["ACTOR"]
+
+          def sign_url():
+              ts = str(int(time.time() * 1000))
+              s = base64.b64encode(
+                  hmac.new(secret.encode(), f"{ts}\n{secret}".encode(), hashlib.sha256).digest()
+              ).decode()
+              return f"{webhook}&timestamp={ts}&sign={urllib.parse.quote_plus(s)}"
+
+          def send(title, text):
+              payload = {"msgtype": "markdown", "markdown": {"title": title, "text": text}}
+              req = urllib.request.Request(
+                  sign_url(), data=json.dumps(payload).encode(),
+                  headers={"Content-Type": "application/json"})
+              with urllib.request.urlopen(req, timeout=15) as r:
+                  print(r.read().decode())
+
+          if event == "push":
+              title = f"📦 {repo} 有新提交"
+              text = (
+                  f"### 📦 {repo} 有新提交\n\n"
+                  f"**分支**：{os.environ['REF_NAME']}\n\n"
+                  f"**提交人**：{actor}\n\n"
+                  f"**提交信息**：{os.environ['COMMIT_MESSAGE']}\n\n"
+                  f"[查看提交]({os.environ['COMMIT_URL']})"
+              )
+              send(title, text)
+          else:
+              action = os.environ["PR_ACTION"]
+              merged = os.environ["PR_MERGED"].lower() == "true"
+              if action == "opened":
+                  head, color = "🔀 新 PR 待审查", "orange"
+              elif action == "reopened":
+                  head, color = "🔀 PR 已重新打开", "orange"
+              elif merged:
+                  head, color = "✅ PR 已合并", "green"
+              else:
+                  head, color = "❌ PR 已关闭", "red"
+              title = head
+              text = (
+                  f"### {head}\n\n"
+                  f"**仓库**：{repo}\n\n"
+                  f"**状态**：{action}（目标分支 {os.environ['PR_BASE']}）\n\n"
+                  f"**提交人**：{actor}\n\n"
+                  f"**PR 标题**：{os.environ['PR_TITLE']}\n\n"
+                  f"[查看 PR]({os.environ['PR_URL']})"
+              )
+              send(title, text)
+          PYEOF
