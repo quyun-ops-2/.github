@@ -4,55 +4,45 @@ on:
   workflow_call:
     inputs:
       event_name:
-        required: true
         type: string
+        required: true
       repo_name:
-        required: true
         type: string
+        required: true
       actor:
+        type: string
         required: true
-        type: string
       ref_name:
-        required: false
         type: string
-        default: ''
       commit_message:
-        required: false
         type: string
-        default: ''
       commit_url:
-        required: false
         type: string
-        default: ''
       pr_title:
-        required: false
         type: string
-        default: ''
       pr_url:
-        required: false
         type: string
-        default: ''
       pr_action:
-        required: false
         type: string
-        default: ''
       pr_merged:
-        required: false
         type: string
-        default: 'false'
       pr_base:
-        required: false
         type: string
-        default: ''
+      upstream_summary:
+        type: string
     secrets:
       DINGTALK_WEBHOOK_URL:
         required: true
       DINGTALK_SIGN_SECRET:
-        required: true
+        required: false
+
+permissions:
+  contents: read
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: 发送钉钉通知
         env:
@@ -69,6 +59,102 @@ jobs:
           PR_ACTION: ${{ inputs.pr_action }}
           PR_MERGED: ${{ inputs.pr_merged }}
           PR_BASE: ${{ inputs.pr_base }}
+          UPSTREAM_SUMMARY: ${{ inputs.upstream_summary }}
         run: |
-          echo 'aW1wb3J0IG9zLCBqc29uLCB0aW1lLCBobWFjLCBoYXNobGliLCBiYXNlNjQsIHVybGxpYi5wYXJzZSwgdXJsbGliLnJlcXVlc3QKCndlYmhvb2sgPSBvcy5lbnZpcm9uWyJESU5HVEFMS19XRUJIT09LX1VSTCJdCnNlY3JldCA9IG9zLmVudmlyb25bIkRJTkdUQUxLX1NJR05fU0VDUkVUIl0KZXZlbnQgPSBvcy5lbnZpcm9uWyJFVkVOVF9OQU1FIl0KcmVwbyA9IG9zLmVudmlyb25bIlJFUE9fTkFNRSJdCmFjdG9yID0gb3MuZW52aXJvblsiQUNUT1IiXQoKCmRlZiBzaWduX3VybCgpOgogICAgdHMgPSBzdHIoaW50KHRpbWUudGltZSgpICogMTAwMCkpCiAgICBzID0gYmFzZTY0LmI2NGVuY29kZSgKICAgICAgICBobWFjLm5ldyhzZWNyZXQuZW5jb2RlKCksICh0cyArICJcbiIgKyBzZWNyZXQpLmVuY29kZSgpLCBoYXNobGliLnNoYTI1NikuZGlnZXN0KCkKICAgICkuZGVjb2RlKCkKICAgIHJldHVybiB3ZWJob29rICsgIiZ0aW1lc3RhbXA9IiArIHRzICsgIiZzaWduPSIgKyB1cmxsaWIucGFyc2UucXVvdGVfcGx1cyhzKQoKCmRlZiBzZW5kKHRpdGxlLCB0ZXh0KToKICAgIHBheWxvYWQgPSB7Im1zZ3R5cGUiOiAibWFya2Rvd24iLCAibWFya2Rvd24iOiB7InRpdGxlIjogdGl0bGUsICJ0ZXh0IjogdGV4dH19CiAgICByZXEgPSB1cmxsaWIucmVxdWVzdC5SZXF1ZXN0KAogICAgICAgIHNpZ25fdXJsKCksIGRhdGE9anNvbi5kdW1wcyhwYXlsb2FkKS5lbmNvZGUoKSwKICAgICAgICBoZWFkZXJzPXsiQ29udGVudC1UeXBlIjogImFwcGxpY2F0aW9uL2pzb24ifSkKICAgIHdpdGggdXJsbGliLnJlcXVlc3QudXJsb3BlbihyZXEsIHRpbWVvdXQ9MTUpIGFzIHI6CiAgICAgICAgcHJpbnQoci5yZWFkKCkuZGVjb2RlKCkpCgoKaWYgZXZlbnQgPT0gInB1c2giOgogICAgdGl0bGUgPSAi8J+TpiAiICsgcmVwbyArICIg5pyJ5paw5o+Q5LqkIgogICAgdGV4dCA9ICgKICAgICAgICAiIyMjIPCfk6YgIiArIHJlcG8gKyAiIOacieaWsOaPkOS6pFxuXG4iCiAgICAgICAgIioq5YiG5pSvKirvvJoiICsgb3MuZW52aXJvblsiUkVGX05BTUUiXSArICJcblxuIgogICAgICAgICIqKuaPkOS6pOS6uioq77yaIiArIGFjdG9yICsgIlxuXG4iCiAgICAgICAgIioq5o+Q5Lqk5L+h5oGvKirvvJoiICsgb3MuZW52aXJvblsiQ09NTUlUX01FU1NBR0UiXSArICJcblxuIgogICAgICAgICJb5p+l55yL5o+Q5LqkXSgiICsgb3MuZW52aXJvblsiQ09NTUlUX1VSTCJdICsgIikiCiAgICApCiAgICBzZW5kKHRpdGxlLCB0ZXh0KQplbHNlOgogICAgYWN0aW9uID0gb3MuZW52aXJvblsiUFJfQUNUSU9OIl0KICAgIG1lcmdlZCA9IG9zLmVudmlyb25bIlBSX01FUkdFRCJdLmxvd2VyKCkgPT0gInRydWUiCiAgICBpZiBhY3Rpb24gPT0gIm9wZW5lZCI6CiAgICAgICAgaGVhZCA9ICLwn5SAIOaWsCBQUiDlvoXlrqHmn6UiCiAgICBlbGlmIGFjdGlvbiA9PSAicmVvcGVuZWQiOgogICAgICAgIGhlYWQgPSAi8J+UgCBQUiDlt7Lph43mlrDmiZPlvIAiCiAgICBlbGlmIG1lcmdlZDoKICAgICAgICBoZWFkID0gIuKchSBQUiDlt7LlkIjlubYiCiAgICBlbHNlOgogICAgICAgIGhlYWQgPSAi4p2MIFBSIOW3suWFs+mXrSIKICAgIHRpdGxlID0gaGVhZAogICAgdGV4dCA9ICgKICAgICAgICAiIyMjICIgKyBoZWFkICsgIlxuXG4iCiAgICAgICAgIioq5LuT5bqTKirvvJoiICsgcmVwbyArICJcblxuIgogICAgICAgICIqKueKtuaAgSoq77yaIiArIGFjdGlvbiArICLvvIjnm67moIfliIbmlK8gIiArIG9zLmVudmlyb25bIlBSX0JBU0UiXSArICLvvIlcblxuIgogICAgICAgICIqKuaPkOS6pOS6uioq77yaIiArIGFjdG9yICsgIlxuXG4iCiAgICAgICAgIioqUFIg5qCH6aKYKirvvJoiICsgb3MuZW52aXJvblsiUFJfVElUTEUiXSArICJcblxuIgogICAgICAgICJb5p+l55yLIFBSXSgiICsgb3MuZW52aXJvblsiUFJfVVJMIl0gKyAiKSIKICAgICkKICAgIHNlbmQodGl0bGUsIHRleHQpCg==' | base64 -d > /tmp/notify.py
-          python3 /tmp/notify.py
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import hmac
+          import json
+          import os
+          import time
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import parse_qsl, urlencode, urlsplit
+          from urllib.request import Request, urlopen
+
+          def field(name, length=240):
+              text = " ".join(os.environ.get(name, "").split())[:length] or "—"
+              for char in "\\`*_[]<>":
+                  text = text.replace(char, "\\" + char)
+              return text.replace("@", "@\u200b")
+
+          def link(name, label):
+              url = os.environ.get(name, "")
+              parsed = urlsplit(url)
+              if parsed.scheme == "https" and parsed.netloc == "github.com" and not any(c in url for c in "()\r\n"):
+                  return "\n\n[" + label + "](" + url + ")"
+              return ""
+
+          event = os.environ["EVENT_NAME"]
+          repo, actor = field("REPO_NAME"), field("ACTOR")
+          detail = ""
+          if event == "push":
+              title = "推送更新"
+              detail = f"\n\n分支或标签 · {field('REF_NAME')}\n\n提交 · {field('COMMIT_MESSAGE')}" + link("COMMIT_URL", "查看提交")
+          elif event == "pull_request":
+              action = os.environ["PR_ACTION"]
+              title = {
+                  "opened": "新建 PR", "reopened": "重新打开 PR", "synchronize": "PR 更新",
+                  "closed": "PR 已合并" if os.environ["PR_MERGED"] == "true" else "PR 已关闭",
+              }.get(action)
+              if not title:
+                  raise SystemExit("不支持的 PR 通知事件。")
+              detail = f"\n\n目标分支 · {field('PR_BASE')}\n\n标题 · {field('PR_TITLE')}" + link("PR_URL", "查看 PR")
+          elif event == "upstream_release":
+              title = "工具上游有更新"
+              releases = os.environ["UPSTREAM_SUMMARY"].splitlines()[:10]
+              if not releases:
+                  raise SystemExit("上游通知缺少版本记录。")
+              entries = []
+              for release in releases:
+                  name, old, new, url = release.split("\t")
+                  parsed = urlsplit(url)
+                  if parsed.scheme != "https" or parsed.netloc != "github.com" or any(c in url for c in "()"):
+                      raise SystemExit("上游发布链接无效。")
+                  def safe_text(value):
+                      return "".join(c for c in value if c.isalnum() or c in " ._-/+")
+                  entries.append(f"- {safe_text(name)} · {safe_text(old)} → [{safe_text(new)}]({url})")
+              detail = "\n\n" + "\n".join(entries) + "\n\n需要升级时请提 PR 并记录验证结果。"
+          elif event == "workflow_dispatch":
+              title = "通知接入验证"
+              detail = "\n\n本条由 GitHub Actions 手动发送，用于核对钉钉群通知。"
+          else:
+              raise SystemExit("不支持的通知事件。")
+
+          title = f"GitHub 运营库 · {title}"
+          message = f"### {title}\n\n仓库 · {repo}\n\n操作者 · {actor}{detail}"
+          webhook = urlsplit(os.environ.get("DINGTALK_WEBHOOK_URL", ""))
+          params = dict(parse_qsl(webhook.query))
+          if (webhook.scheme, webhook.netloc, webhook.path) != ("https", "oapi.dingtalk.com", "/robot/send") or not params.get("access_token"):
+              raise SystemExit("仓库缺少有效的 DINGTALK_WEBHOOK_URL。")
+          secret = os.environ.get("DINGTALK_SIGN_SECRET")
+          if secret:
+              timestamp = str(int(time.time() * 1000))
+              digest = hmac.new(secret.encode(), f"{timestamp}\n{secret}".encode(), hashlib.sha256).digest()
+              params.update(timestamp=timestamp, sign=base64.b64encode(digest).decode())
+          body = json.dumps({"msgtype": "markdown", "markdown": {"title": title, "text": message}})
+          request = Request(
+              webhook._replace(query=urlencode(params), fragment="").geturl(),
+              data=body.encode(), headers={"Content-Type": "application/json"},
+          )
+          try:
+              with urlopen(request, timeout=20) as response:
+                  receipt = json.load(response)
+          except HTTPError as error:
+              raise SystemExit(f"钉钉机器人 HTTP {error.code}。") from None
+          except (URLError, TimeoutError, ValueError):
+              raise SystemExit("无法取得钉钉机器人的发送结果。") from None
+          if receipt.get("errcode") != 0:
+              code = receipt.get("errcode")
+              hint = str(receipt.get("errmsg", "")).lower()
+              if "sign" in hint or "签" in hint:
+                  hint = "检查机器人加签和 DINGTALK_SIGN_SECRET"
+              elif "keyword" in hint or "关键词" in hint:
+                  hint = "检查机器人关键词设置"
+              elif "ip" in hint:
+                  hint = "检查机器人 IP 白名单"
+              else:
+                  hint = "检查机器人的有效性和安全设置"
+              raise SystemExit(f"钉钉拒绝通知，错误码 {code if isinstance(code, int) else '未知'}。{hint}。")
+          print("钉钉机器人已接收通知（errcode=0）。")
+          PY

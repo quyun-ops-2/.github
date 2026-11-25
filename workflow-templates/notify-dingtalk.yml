@@ -1,0 +1,32 @@
+name: 钉钉推送通知
+
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: >-
+      ${{ !github.event.deleted &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    uses: quyun-ops-2/.github/.github/workflows/notify-dingtalk.yml@main
+    with:
+      event_name: ${{ github.event_name }}
+      repo_name: ${{ github.repository }}
+      actor: ${{ github.actor }}
+      ref_name: ${{ github.ref_name }}
+      commit_message: ${{ github.event.head_commit.message }}
+      commit_url: ${{ github.event.head_commit.url || github.event.compare }}
+      pr_title: ${{ github.event.pull_request.title }}
+      pr_url: ${{ github.event.pull_request.html_url }}
+      pr_action: ${{ github.event.action }}
+      pr_merged: ${{ toJson(github.event.pull_request.merged) }}
+      pr_base: ${{ github.event.pull_request.base.ref }}
+    secrets:
+      DINGTALK_WEBHOOK_URL: ${{ secrets.DINGTALK_WEBHOOK_URL }}
+      DINGTALK_SIGN_SECRET: ${{ secrets.DINGTALK_SIGN_SECRET }}

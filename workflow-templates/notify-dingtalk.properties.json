@@ -1,0 +1,5 @@
+{
+  "name": "运营库钉钉通知",
+  "description": "把组织仓库的推送、PR、合并和关闭通知发送到运营钉钉群。需要在仓库配置机器人 Secret。",
+  "categories": ["Automation"]
+}
